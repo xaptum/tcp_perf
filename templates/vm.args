@@ -1,0 +1,16 @@
+-sname tcp_perf
+
+-setcooke 123455678
+
+# Set num processes to maximum
++P 134217727
+## Enable kernel poll
++K true
+## Enable a few async threads
++A 30
+
+## set number of ports/sockets to max
+-env ERL_MAX_PORTS 134217727
+
+## Tweak GC to run more often
+##-env ERL_FULLSWEEP_AFTER 10
