@@ -12,7 +12,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/0]).
+-export([start_link/7]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -27,31 +27,36 @@
 -define(SEND_OPTS, [ binary, {packet, 0}, {keepalive, true}, {nodelay, true}]).
 
 
--record(state, {host, port, conn_interval, num_sockets, packet_interval, num_packets}).
+-record(state, {host, port, conn_interval, num_sockets, packet_interval, num_packets, packet}).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
 
-start_link() ->
-  gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
+start_link(Host,  Port, ConnInterval, NumSockets, PacketInterval, NumsPackets, Packet) ->
+  gen_server:start_link({local, ?SERVER}, ?MODULE, [Host,  Port, ConnInterval, NumSockets, PacketInterval, NumsPackets, Packet], []).
 
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
 
-init([Host,  Port, ConnInterval, NumSockets, PacketInterval, NumPackets]) ->
-  gen_server:cast(self(), socket),
+init([Host,  Port, ConnInterval, NumSockets, PacketInterval, NumPackets, Packet]) ->
+  gen_server:cast(self(), send_to_sockets),
   {ok, #state{
     host = Host, port = Port,
     conn_interval = ConnInterval, num_sockets = NumSockets,
-    packet_interval = PacketInterval, num_packets = NumPackets}}.
+    packet_interval = PacketInterval, num_packets = NumPackets, packet = Packet}}.
 
 handle_call(_Request, _From, State) ->
   {reply, ok, State}.
 
-handle_cast(socket, #state{host = Host, port = Port} = State) ->
-  gen_tcp:connect(Host, Port, ?SEND_OPTS),
+handle_cast(send_to_sockets, #state{host = Host, port = Port,
+  conn_interval = ConnInterval, num_sockets = NumSockets,
+  packet_interval = PacketInterval, num_packets = NumPackets, packet = Packet} = State) ->
+  Socket = gen_tcp:connect(Host, Port, ?SEND_OPTS),
+  SocketPid = tcp_perf_socket_sup:start_socket(Socket),
+  gen_tcp:cast(SocketPid, {recv, ?MODULE}),
+  gen_tcp:cast(self(), accept),
   {noreply, State}.
 
 handle_info(_Info, State) ->
@@ -66,3 +71,11 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+
+start_socket(Host, Port, PacketInterval, NumPackets)->
+  Socket = gen_tcp:connect(Host, Port, ?SEND_OPTS),
+  SocketPid = tcp_perf_socket_sup:start_socket(Socket),
+  tcp_perf_socket:send_loop().
+
+
+

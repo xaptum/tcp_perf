@@ -1,15 +1,17 @@
 {application, 'tcp_perf',
- [{description, "An OTP application"},
+ [{description, "TCP Performance testing server and client appications"},
   {vsn, "0.1.0"},
   {registered, []},
   {mod, {'tcp_perf_app', []}},
   {applications,
    [kernel,
-    stdlib
+    stdlib,
+    lager,
+    cowboy,
+    oneup_metrics
    ]},
   {env,[]},
   {modules, []},
-
   {contributors, []},
   {licenses, []},
   {links, []}

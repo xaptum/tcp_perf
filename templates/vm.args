@@ -1,6 +1,6 @@
--sname tcp_perf
+-sname tcp_perf_{{ type }}
 
--setcooke 123455678
+-setcookie abcdefg
 
 # Set num processes to maximum
 +P 134217727

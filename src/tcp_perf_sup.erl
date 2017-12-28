@@ -36,27 +36,29 @@ init([server]) ->
             restart => permanent,
             shutdown => 1000},
 
-    {ok, { {one_for_all, 0, 1}, [TcpPerfServerSpec]} };
+    {ok, { RestartStrategy, [TcpPerfServerSpec]} };
 
 init([client]) ->
     RestartStrategy = {simple_one_for_one, 60, 3600},
 
     {ok, SendHosts} = application:get_env(send_hosts),
     {ok, SendPort} = application:get_env(send_port),
-    {ok, SendInterval}  = application:get_env(send_interval),
+    {ok, PacketInterval}  = application:get_env(packet_interval),
     {ok, ConnInterval} = application:get_env(conn_interval),
     {ok, NumSockets} = application:get_env(num_sockets_per_host),
     {ok, NumPackets} = application:get_env(num_packets_per_socket),
+    {ok, PacketSize} = appication:get_env(packet_size),
+    Packet = create_packet(PacketSize),
 
     TcpPerfClientSpec =
-        #{id => tcp_perf_server,
-            start => {tcp_perf_server, start_link, [SendPort, ConnInterval, NumSockets, SendInterval, NumPackets]},
+        #{id => tcp_perf_client,
+            start => {tcp_perf_client, start_link, [SendPort, ConnInterval, NumSockets, PacketInterval, NumPackets, Packet]},
             restart => transient,
             shutdown => 1000},
 
-    [start_client(Host) || Host <- SendHosts],
+    [start_client(atom_to_list(Host)) || Host <- SendHosts],
 
-    {ok, RestartStrategy, TcpPerfClientSpec}.
+    {ok, RestartStrategy, [TcpPerfClientSpec]}.
 
 
 %%====================================================================
@@ -65,3 +67,10 @@ init([client]) ->
 
 start_client(SendHost)->
     supervisor:start_child(?MODULE, [SendHost]).
+
+
+create_packet(PacketSize)->
+    Packet = list_to_binary(lists:seq(32, 31 + PacketSize rem 95) ++ lists:duplicate(PacketSize div 95, lists:seq(32, 126))),
+    PacketSize = size(Packet), %% sanity check
+    lager:info("Created message ~p", [Packet]),
+    <<PacketSize:16,Packet/binary>>.

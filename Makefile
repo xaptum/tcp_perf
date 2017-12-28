@@ -1,7 +1,10 @@
 BASEDIR = $(shell pwd)
 REBAR = rebar3
 APPNAME = tcp_perf
-RELPATH = _build/default/rel/$(APPNAME)
+APPNAME_SERVER = $(APPNAME)_server
+APPNAME_CLIENT = $(APPNAME)_client
+RELPATH_SERVER = _build/server/rel/$(APPNAME)
+RELPATH_CLIENT = _build/client/rel/$(APPNAME)
 SHELL = /bin/bash
 DEBUG=1
 
@@ -15,26 +18,34 @@ recompile:
 release:
 	$(REBAR) release
 
-console: release
-	cd $(RELPATH) && ./bin/$(APPNAME) console
+server:
+	$(REBAR) as server release
 
-tar: release
-	cd $(RELPATH)/../ && rm -f $(APPNAME).tar.gz && tar -cvf $(APPNAME).tar $(APPNAME)/ && gzip $(APPNAME).tar
-	mv $(RELPATH)/../$(APPNAME).tar.gz $(BASEDIR)/_build/
+client:
+	$(REBAR) as client release
+
+tar-server: server
+	cd $(RELPATH_SERVER)/../ && rm -f $(APPNAME_SERVER).tar.gz && tar -cvf $(APPNAME)_server.tar $(APPNAME_SERVER)/ && gzip $(APPNAME_SERVER).tar
+	mv $(RELPATH_SERVER)/../$(APPNAME_SERVER).tar.gz $(BASEDIR)/_build/
+
+
+tar-client: client
+	cd $(RELPATH_CLIENT)/../ && rm -f $(APPNAME_CLIENT).tar.gz && tar -cvf $(APPNAME_CLIENT).tar $(APPNAME_CLIENT)/ && gzip $(APPNAME_CLIENT).tar
+	mv $(RELPATH_CLIENT)/../$(APPNAME_CLIENT).tar.gz $(BASEDIR)/_build/
+
 
 deb: release
 # Create directory structure
 	mkdir -p $(BASEDIR)/_build/debian/DEBIAN
-	mkdir -p $(BASEDIR)/_build/debian/usr/lib/systemd/system
-	mkdir -p $(BASEDIR)/_build/debian/opt/xaptum/$(APPNAME)
+	mkdir -p $(BASEDIR)/_build/debian/opt/xaptum/$(APPNAME_SERVER)
+	mkdir -p $(BASEDIR)/_build/debian/opt/xaptum/$(APPNAME_CLIENT)
 
 # Copy tcp_perf files
-	cp -r $(RELPATH)/. $(BASEDIR)/_build/debian/opt/xaptum/$(APPNAME)/
+	cp -r $(RELPATH_SERVER)/. $(BASEDIR)/_build/debian/opt/xaptum/$(APPNAME_SERVER)/
+	cp -r $(RELPATH_CLIENT)/. $(BASEDIR)/_build/debian/opt/xaptum/$(APPNAME_CLIENT)/
 
 # Copy DEBIAN control files
 	cp $(BASEDIR)/debian/control $(BASEDIR)/_build/debian/DEBIAN/
-	cp $(BASEDIR)/debian/postinst $(BASEDIR)/_build/debian/DEBIAN/
-	cp $(BASEDIR)/debian/prerm $(BASEDIR)/_build/debian/DEBIAN/
 
 # Build debian package
 	dpkg-deb --build $(BASEDIR)/_build/debian $(BASEDIR)/_build
@@ -43,11 +54,20 @@ clean:
 	$(REBAR) clean
 	rm -rf _build
 
-start:
-	$(BASEDIR)/$(RELPATH)/bin/$(APPNAME) start
+start-server:
+	$(BASEDIR)/$(RELPATH_SERVER)/bin/$(APPNAME) start
 
-stop:
-	$(BASEDIR)/$(RELPATH)/bin/$(APPNAME) stop
+stop-server:
+	$(BASEDIR)/$(RELPATH_SERVER)/bin/$(APPNAME) stop
 
-attach:
-	$(BASEDIR)/$(RELPATH)/bin/$(APPNAME) attach
+attach-server:
+	$(BASEDIR)/$(RELPATH_SERVER)/bin/$(APPNAME) attach
+
+start-client:
+	$(BASEDIR)/$(RELPATH_CLIENT)/bin/$(APPNAME) start
+
+stop-client:
+	$(BASEDIR)/$(RELPATH_CLIENT)/bin/$(APPNAME) stop
+
+attach-client:
+	$(BASEDIR)/$(RELPATH_CLIENT)/bin/$(APPNAME) attach

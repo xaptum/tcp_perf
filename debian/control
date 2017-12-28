@@ -1,0 +1,7 @@
+Package: tcp_perf
+Version: 1.0.0-1
+Section: misc
+Priority: extra
+Architecture: amd64
+Maintainer: Xaptum Sales <sales@xaptum.com>
+Description: Xaptum TCP performance test server and client.

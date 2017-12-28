@@ -15,10 +15,12 @@
 
 %% API
 -export([start_link/2,
-  send_loop/5]).
+  send_loop/5,
+  recv_loop/3]).
 
 %% gen_server callbacks
--export([init/1,
+-export([
+  init/1,
   handle_call/3,
   handle_cast/2,
   handle_info/2,
@@ -36,6 +38,12 @@
 
 start_link(Socket, Metrics) ->
   gen_server:start_link({local, ?SERVER}, ?MODULE, [Socket, Metrics], []).
+
+send(SocketPid, Message, N, PPS)->
+  gen_server:cast(SocketPid, {send, Message, N, PPS}).
+
+send(SocketPid, Message) ->
+  gen_server:cast(SocketPid, {send, Message}).
 
 %%%===================================================================
 %%% gen_server callbacks

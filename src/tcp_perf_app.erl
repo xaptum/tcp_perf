@@ -19,8 +19,9 @@
 
 start(_StartType, _StartArgs) ->
   {ok, Type} = application:get_env(type),
+  application:ensure_all_started(lager),
   lager:info("Starting tcp perf ~p", [Type]),
-  oneup_metrics:init_from_config(?METRICS_CONFIG),
+  oneup_metrics:add_multiple(?METRICS_CONFIG),
   tcp_perf_sup:start_link(Type).
 
 
