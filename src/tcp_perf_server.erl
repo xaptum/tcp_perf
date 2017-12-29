@@ -10,9 +10,11 @@
 -author("iguberman").
 
 -behaviour(gen_server).
+-behaviour(tcp_perf_socket).
 
 %% API
--export([start_link/0]).
+-export([start_link/0,
+  on_packet_received/1]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -32,6 +34,16 @@
 
 start_link() ->
   gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
+
+
+%%%===================================================================
+%%% tcp_perf_socket callback
+%%%===================================================================
+
+
+on_packet_received(_Packet)->
+  ok.
+
 
 %%%===================================================================
 %%% gen_server callbacks

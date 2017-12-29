@@ -15,6 +15,8 @@
 
 %% API
 -export([start_link/2,
+  send/2,
+  send/4,
   send_loop/5,
   recv_loop/3]).
 
@@ -31,6 +33,7 @@
 
 -record(state, {socket}).
 
+-callback on_packet_received(Packet :: binary()) -> Response :: term().
 
 %%%===================================================================
 %%% API
@@ -39,11 +42,11 @@
 start_link(Socket, Metrics) ->
   gen_server:start_link({local, ?SERVER}, ?MODULE, [Socket, Metrics], []).
 
-send(SocketPid, Message, N, PPS)->
-  gen_server:cast(SocketPid, {send, Message, N, PPS}).
+send(SocketPid, Packet, N, PPS)->
+  gen_server:cast(SocketPid, {send, Packet, N, PPS}).
 
-send(SocketPid, Message) ->
-  gen_server:cast(SocketPid, {send, Message}).
+send(SocketPid, Packet) ->
+  gen_server:cast(SocketPid, {send, Packet}).
 
 %%%===================================================================
 %%% gen_server callbacks
@@ -100,7 +103,7 @@ send_loop(Socket, Message, N, Interval)->
   case gen_tcp:send(Socket, Message) of
     ok ->
       oneup_metrics:increment(?SEND_PACKETS_SUCCESS),
-      sleep(Interval),
+      timer:sleep(Interval),
       send_loop(Socket, Message, N - 1, Interval);
     {error, Error} ->
       lager:error("Error ~p sending remaining ~b packets from ~p", [Error, N, Socket]),
@@ -150,9 +153,8 @@ inner_recv_loop(Socket, HandlerFun, NumPackets)->
       {ok, NumPackets}
   end.
 
-sleep(0)->ok;
-sleep(Interval) when Interval > 0 -> timer:sleep(Interval).
 
 current_time() ->
   {Mega, Sec, Micro} = os:timestamp(),
   (Mega * 1000000 + Sec) * 1000000 + Micro.
+

@@ -27,7 +27,7 @@
 -define(SEND_OPTS, [ binary, {packet, 0}, {keepalive, true}, {nodelay, true}]).
 
 
--record(state, {host, port, conn_interval, num_sockets, packet_interval, num_packets, packet}).
+-record(state, {host, port, conn_interval, num_sockets, packet_rate, num_packets, packet}).
 
 %%%===================================================================
 %%% API
@@ -45,18 +45,15 @@ init([Host,  Port, ConnInterval, NumSockets, PacketInterval, NumPackets, Packet]
   {ok, #state{
     host = Host, port = Port,
     conn_interval = ConnInterval, num_sockets = NumSockets,
-    packet_interval = PacketInterval, num_packets = NumPackets, packet = Packet}}.
+    packet_rate = PacketInterval, num_packets = NumPackets, packet = Packet}}.
 
 handle_call(_Request, _From, State) ->
   {reply, ok, State}.
 
 handle_cast(send_to_sockets, #state{host = Host, port = Port,
   conn_interval = ConnInterval, num_sockets = NumSockets,
-  packet_interval = PacketInterval, num_packets = NumPackets, packet = Packet} = State) ->
-  Socket = gen_tcp:connect(Host, Port, ?SEND_OPTS),
-  SocketPid = tcp_perf_socket_sup:start_socket(Socket),
-  gen_tcp:cast(SocketPid, {recv, ?MODULE}),
-  gen_tcp:cast(self(), accept),
+  packet_rate = PPS, num_packets = NumPackets, packet = Packet} = State) ->
+  [start_socket(Host, Port, PPS, NumPackets, Packet, ConnInterval) || _X <- lists:seq(1, NumSockets)],
   {noreply, State}.
 
 handle_info(_Info, State) ->
@@ -72,10 +69,11 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%===================================================================
 
-start_socket(Host, Port, PacketInterval, NumPackets)->
+start_socket(Host, Port, PPS, NumPackets, Packet, ConnInterval)->
   Socket = gen_tcp:connect(Host, Port, ?SEND_OPTS),
   SocketPid = tcp_perf_socket_sup:start_socket(Socket),
-  tcp_perf_socket:send_loop().
+  tcp_perf_socket:send(SocketPid, Packet, NumPackets, PPS),
+  timer:sleep(ConnInterval).
 
 
 
