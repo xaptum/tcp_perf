@@ -43,16 +43,16 @@ init([client]) ->
 
     {ok, SendHosts} = application:get_env(send_hosts),
     {ok, SendPort} = application:get_env(send_port),
-    {ok, PacketInterval}  = application:get_env(packet_interval),
+    {ok, PacketRate}  = application:get_env(packet_rate),
     {ok, ConnInterval} = application:get_env(conn_interval),
     {ok, NumSockets} = application:get_env(num_sockets_per_host),
     {ok, NumPackets} = application:get_env(num_packets_per_socket),
-    {ok, PacketSize} = appication:get_env(packet_size),
+    {ok, PacketSize} = application:get_env(packet_size),
     Packet = create_packet(PacketSize),
 
     TcpPerfClientSpec =
         #{id => tcp_perf_client,
-            start => {tcp_perf_client, start_link, [SendPort, ConnInterval, NumSockets, PacketInterval, NumPackets, Packet]},
+            start => {tcp_perf_client, start_link, [SendPort, ConnInterval, NumSockets, PacketRate, NumPackets, Packet]},
             restart => transient,
             shutdown => 1000},
 
