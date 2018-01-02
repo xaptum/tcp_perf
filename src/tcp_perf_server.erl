@@ -13,7 +13,7 @@
 -behaviour(tcp_perf_socket).
 
 %% API
--export([start_link/0,
+-export([start_link/1,
   on_packet_received/1]).
 
 %% gen_server callbacks
@@ -33,7 +33,7 @@
 %%%===================================================================
 
 start_link(ListenSocket) ->
-  gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
+  gen_server:start_link({local, ?SERVER}, ?MODULE, [ListenSocket], []).
 
 
 %%%===================================================================
@@ -49,9 +49,7 @@ on_packet_received(_Packet)->
 %%% gen_server callbacks
 %%%===================================================================
 
-init([]) ->
-  {ok, ListenPort} = application:get_env(listen_port),
-  {ok, ListenSocket} = listen_socket(ListenPort),
+init([ListenSocket]) ->
   Metrics = oneup_metrics:initial_get_config(),
   oneup_metrics:enable(Metrics),
   gen_server:cast(self(), accept),
