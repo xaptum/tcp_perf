@@ -150,7 +150,8 @@ inner_recv_loop(Socket, HandlerFun, NumPackets)->
           lager:error("Receiver ~p: Error receiving expected ~b bytes: ~p~n", [Socket, Size, Error]),
           {error, Error}
       end;
-    {error, _Error} ->
+    {error, Error} ->
+      lager:error("Exiting ~p inner_recv_loop after receiving ~b packets due to error ~p", [Socket, NumPackets, Error]),
       {ok, NumPackets}
   end.
 
