@@ -14,7 +14,7 @@
 
 %% API
 -export([start_link/1,
-  on_packet_received/1]).
+  on_packet_received/3]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -35,15 +35,12 @@
 start_link(ListenSocket) ->
   gen_server:start_link({local, ?SERVER}, ?MODULE, [ListenSocket], []).
 
-
 %%%===================================================================
 %%% tcp_perf_socket callback
 %%%===================================================================
 
-
-on_packet_received(_Packet)->
+on_packet_received(_Socket, _Packet, _Metrics)->
   ok.
-
 
 %%%===================================================================
 %%% gen_server callbacks
@@ -60,9 +57,9 @@ handle_call(_Request, _From, State) ->
 
 handle_cast(accept, #state{listen_socket = ListenSocket} = State) ->
   {ok, Socket} = gen_tcp:accept(ListenSocket),
-  SocketPid = tcp_perf_socket_sup:start_socket(Socket),
-  gen_tcp:cast(SocketPid, {recv, ?MODULE}),
-  gen_tcp:cast(self(), accept),
+  {ok, SocketPid} = tcp_perf_socket_sup:start_socket(Socket),
+  gen_server:cast(SocketPid, {recv, ?MODULE}),
+  gen_server:cast(self(), accept),
   {noreply, State};
 handle_cast(UnknownRequest, _State)->
   lager:warning("Don't know how to handle cast ~p", [UnknownRequest]).

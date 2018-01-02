@@ -72,7 +72,7 @@ code_change(_OldVsn, State, _Extra) ->
 start_socket(Host, Port, PPS, NumPackets, Packet, ConnInterval)->
   lager:debug("Connecting ~p:~b", [Host, Port]),
   {ok, Socket} = gen_tcp:connect(Host, Port, ?SEND_OPTS),
-  SocketPid = tcp_perf_socket_sup:start_socket(Socket),
+  {ok, SocketPid} = tcp_perf_socket_sup:start_socket(Socket),
   tcp_perf_socket:send(SocketPid, Packet, NumPackets, PPS),
   timer:sleep(ConnInterval).
 

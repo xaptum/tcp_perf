@@ -22,6 +22,7 @@ start(_StartType, _StartArgs) ->
   application:ensure_all_started(lager),
   lager:info("Starting tcp perf ~p", [Type]),
   oneup_metrics:add_multiple(?METRICS_CONFIG),
+  {ok, _SocketSupPid } = tcp_perf_socket_sup:start_link(),
   {ok, SupPid} = tcp_perf_sup:start_link(Type),
   start_clients(Type),
   {ok, SupPid}.

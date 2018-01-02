@@ -33,14 +33,14 @@
 
 -record(state, {socket}).
 
--callback on_packet_received(Packet :: binary()) -> Response :: term().
+-callback on_packet_received(Socket :: port(), Packet :: binary(), Metrics :: map()) -> Response :: term().
 
 %%%===================================================================
 %%% API
 %%%===================================================================
 
-start_link(Socket, Metrics) ->
-  gen_server:start_link({local, ?SERVER}, ?MODULE, [Socket, Metrics], []).
+start_link(Metrics, Socket) ->
+  gen_server:start_link(?MODULE, [Socket, Metrics], []).
 
 send(SocketPid, Packet, N, PPS)->
   gen_server:cast(SocketPid, {send, Packet, N, PPS}).
@@ -54,7 +54,7 @@ send(SocketPid, Packet) ->
 
 init([Socket, Metrics]) ->
   process_flag(trap_exit, true),
-  oneup_stats:enable(Metrics),
+  oneup_metrics:enable(Metrics),
   {ok, #state{socket = Socket}}.
 
 handle_call(_Request, _From, State) ->
@@ -118,7 +118,7 @@ recv_loop(Socket, Handler, MetricsMap) when is_atom(Handler); is_pid(Handler)->
   oneup_metrics:enable(MetricsMap),
   HandlerFun =
     if is_pid(Handler) -> fun(Packet) -> Handler ! Packet end;
-      else -> fun(Packet) -> Handler:on_packet_received(Socket, Packet, MetricsMap) end
+      true -> fun(Packet) -> Handler:on_packet_received(Socket, Packet, MetricsMap) end
     end,
   oneup_metrics:increment(?SOCKETS_RECV_STARTED),
   case inner_recv_loop(Socket, HandlerFun, 0) of
@@ -126,13 +126,13 @@ recv_loop(Socket, Handler, MetricsMap) when is_atom(Handler); is_pid(Handler)->
     {error, closed} -> oneup_metrics:increment(?SOCKETS_RECV_CLOSED);
     {ok, NumPackets} ->
       Stop = current_time(),
-      PPS = NumPackets/((Stop - Start) * 1000000),
+      PPS = NumPackets/((Stop - Start) / 1000000),
       oneup_metrics:increment(?SOCKETS_RECV_COMPLETE),
       SocketsComplete = oneup_metrics:get(?SOCKETS_RECV_COMPLETE),
       PrevRate = oneup_metrics:get(?RECV_PACKETS_RATE),
-      oneup_metrics:set(?RECV_PACKETS_RATE, ((PrevRate * (SocketsComplete - 1) + PPS)/SocketsComplete))
+      oneup_metrics:set(?RECV_PACKETS_RATE, round(((PrevRate * (SocketsComplete - 1) + PPS)/SocketsComplete) ) )
   end,
-  oneup_metrics:increment([sockets, recv, started], -1).
+  oneup_metrics:increment(?SOCKETS_RECV_STARTED, -1).
 
 
 inner_recv_loop(Socket, HandlerFun, NumPackets)->
@@ -142,7 +142,7 @@ inner_recv_loop(Socket, HandlerFun, NumPackets)->
         {ok, Packet} ->
           oneup_metrics:increment(?RECV_PACKETS_SUCCESS),
           HandlerFun(Packet),
-          recv_loop(Socket, HandlerFun, NumPackets + 1);
+          inner_recv_loop(Socket, HandlerFun, NumPackets + 1);
         {error, timeout} ->
           lager:error("Receiver ~p: Timed out receiving expected ~b bytes", [Socket, Size]),
           {error, timeout};
@@ -150,7 +150,7 @@ inner_recv_loop(Socket, HandlerFun, NumPackets)->
           lager:error("Receiver ~p: Error receiving expected ~b bytes: ~p~n", [Socket, Size, Error]),
           {error, Error}
       end;
-    {error, Error} ->
+    {error, _Error} ->
       {ok, NumPackets}
   end.
 
