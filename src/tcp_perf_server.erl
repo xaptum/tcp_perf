@@ -32,7 +32,7 @@
 %%% API
 %%%===================================================================
 
-start_link() ->
+start_link(ListenSocket) ->
   gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
 
@@ -82,13 +82,3 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%===================================================================
 
-listen_socket(Port)->
-  case gen_tcp:listen(Port, [binary, {packet, 0}, {active, false} ]) of
-    {ok, ListenSocket} ->
-      lager:info("SUCCESS gen_tcp:listen got listen socket ~p with recbuf ~p ~n", [ListenSocket, inet:getopts(ListenSocket, [recbuf])]),
-      {ok, Port} = inet:port(ListenSocket),
-      {ok, ListenSocket};
-    {error, Reason} ->
-      lager:error("ERROR gen_tcp:listen on port ~b Reason ~p~n", [Port, Reason]),
-      {error, {listen_port, Port, Reason} }
-  end.

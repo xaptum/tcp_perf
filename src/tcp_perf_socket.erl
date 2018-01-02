@@ -60,12 +60,12 @@ init([Socket, Metrics]) ->
 handle_call(_Request, _From, State) ->
   {reply, ok, State}.
 
-handle_cast({send, Message}, #state{socket = Socket} = State) when is_binary(Message)->
-  ok = gen_tcp:send(Socket, Message),
+handle_cast({send, Packet}, #state{socket = Socket} = State) when is_binary(Packet)->
+  ok = gen_tcp:send(Socket, Packet),
   {noreply, State};
-handle_cast({send, Message, N, PPS}, #state{socket = Socket} = State) when is_binary(Message), is_integer(PPS) ->
+handle_cast({send, Packet, N, PPS}, #state{socket = Socket} = State) when is_binary(Packet), is_integer(PPS) ->
   Interval = round(1000/PPS),
-  spawn_link(?MODULE, send_loop, [Socket, Message, N, Interval, oneup_metrics:config()]),
+  spawn_link(?MODULE, send_loop, [Socket, Packet, N, Interval, oneup_metrics:config()]),
   {noreply, State};
 handle_cast({recv, Handler}, #state{socket = Socket} = State) ->
   spawn_link(?MODULE, recv_loop, [Socket, Handler, oneup_metrics:config()]),
@@ -94,6 +94,7 @@ code_change(_OldVsn, State, _Extra) ->
 send_loop(Socket, Message, N, Interval, MetricsMap)->
   oneup_metrics:enable(MetricsMap),
   oneup_metrics:increment(?SOCKETS_SEND_STARTED),
+  lager:debug("Starting send_loop of socket ~p", [Socket]),
   send_loop(Socket, Message, N, Interval).
 
 send_loop(_Socket, _Message, 0, _Interval)->

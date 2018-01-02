@@ -38,7 +38,7 @@ init([]) ->
     #{id => tcp_perf_socket,
       start => {tcp_perf_socket, start_link, [Metrics]},
       restart => temporary,
-      shutdown => 30000},
+      shutdown => 5000},
 
   {ok, {RestartStrategy, [TcpPerfSocketSpec]}}.
 

@@ -33,7 +33,7 @@
 %%% API
 %%%===================================================================
 
-start_link(Host,  Port, ConnInterval, NumSockets, PacketInterval, NumsPackets, Packet) ->
+start_link(Port, ConnInterval, NumSockets, PacketInterval, NumsPackets, Packet, Host) ->
   gen_server:start_link({local, ?SERVER}, ?MODULE, [Host,  Port, ConnInterval, NumSockets, PacketInterval, NumsPackets, Packet], []).
 
 %%%===================================================================
@@ -70,7 +70,8 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 
 start_socket(Host, Port, PPS, NumPackets, Packet, ConnInterval)->
-  Socket = gen_tcp:connect(Host, Port, ?SEND_OPTS),
+  lager:debug("Connecting ~p:~b", [Host, Port]),
+  {ok, Socket} = gen_tcp:connect(Host, Port, ?SEND_OPTS),
   SocketPid = tcp_perf_socket_sup:start_socket(Socket),
   tcp_perf_socket:send(SocketPid, Packet, NumPackets, PPS),
   timer:sleep(ConnInterval).

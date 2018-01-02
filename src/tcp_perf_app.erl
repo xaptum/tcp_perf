@@ -22,8 +22,16 @@ start(_StartType, _StartArgs) ->
   application:ensure_all_started(lager),
   lager:info("Starting tcp perf ~p", [Type]),
   oneup_metrics:add_multiple(?METRICS_CONFIG),
-  tcp_perf_sup:start_link(Type).
+  {ok, SupPid} = tcp_perf_sup:start_link(Type),
+  start_clients(Type),
+  {ok, SupPid}.
 
+
+start_clients(server)->ok;
+start_clients(client)->
+  {ok, SendHosts} = application:get_env(send_hosts),
+  [tcp_perf_sup:start_client(atom_to_list(Host)) || Host <- SendHosts],
+  ok.
 
 %%--------------------------------------------------------------------
 stop(_State) ->
