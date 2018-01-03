@@ -25,14 +25,12 @@ client:
 	$(REBAR) as client release
 
 tar-server: server
-	cd $(RELPATH_SERVER)/../ && rm -f $(APPNAME_SERVER).tar.gz && tar -cvf $(APPNAME)_server.tar $(APPNAME_SERVER)/ && gzip $(APPNAME_SERVER).tar
+	cd $(RELPATH_SERVER)/.. && rm -f $(APPNAME_SERVER).tar.gz && tar -cvf $(APPNAME_SERVER).tar $(APPNAME)/ && gzip $(APPNAME_SERVER).tar
 	mv $(RELPATH_SERVER)/../$(APPNAME_SERVER).tar.gz $(BASEDIR)/_build/
 
-
 tar-client: client
-	cd $(RELPATH_CLIENT)/../ && rm -f $(APPNAME_CLIENT).tar.gz && tar -cvf $(APPNAME_CLIENT).tar $(APPNAME_CLIENT)/ && gzip $(APPNAME_CLIENT).tar
+	cd $(RELPATH_CLIENT)/../ && rm -f $(APPNAME_CLIENT).tar.gz && tar -cvf $(APPNAME_CLIENT).tar $(APPNAME)/ && gzip $(APPNAME_CLIENT).tar
 	mv $(RELPATH_CLIENT)/../$(APPNAME_CLIENT).tar.gz $(BASEDIR)/_build/
-
 
 deb: release
 # Create directory structure
