@@ -12,6 +12,8 @@
 -behaviour(gen_server).
 -behaviour(tcp_perf_socket).
 
+-include("../include/metrics.hrl").
+
 %% API
 -export([start_link/1,
   on_packet_received/3]).

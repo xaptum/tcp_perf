@@ -11,6 +11,8 @@
 
 -behaviour(gen_server).
 
+-include("../include/metrics.hrl").
+
 %% API
 -export([start_link/7]).
 
@@ -53,6 +55,7 @@ handle_call(_Request, _From, State) ->
 handle_cast(send_to_sockets, #state{host = Host, port = Port,
   conn_interval = ConnInterval, num_sockets = NumSockets,
   packet_rate = PPS, num_packets = NumPackets, packet = Packet} = State) ->
+  lager:info("Starting ~b sockets on ~p:~b sending ~b packets at ~b pps ...", [NumSockets, Host, Port, NumPackets, PPS]),
   [start_socket(Host, Port, PPS, NumPackets, Packet, ConnInterval) || _X <- lists:seq(1, NumSockets)],
   {noreply, State}.
 

@@ -93,13 +93,13 @@ code_change(_OldVsn, State, _Extra) ->
 
 send_loop(Socket, Message, N, Interval, MetricsMap)->
   oneup_metrics:enable(MetricsMap),
-  oneup_metrics:increment(?SOCKETS_SEND_STARTED),
+  oneup_metrics:increment(?SOCKETS_SEND_ACTIVE),
   lager:debug("Starting send_loop of socket ~p", [Socket]),
   send_loop(Socket, Message, N, Interval).
 
 send_loop(_Socket, _Message, 0, _Interval)->
   oneup_metrics:increment(?SOCKETS_SEND_COMPLETE),
-  oneup_metrics:increment(?SOCKETS_SEND_STARTED, -1);
+  oneup_metrics:increment(?SOCKETS_SEND_ACTIVE, -1);
 send_loop(Socket, Message, N, Interval)->
   case gen_tcp:send(Socket, Message) of
     ok ->
@@ -108,7 +108,7 @@ send_loop(Socket, Message, N, Interval)->
       send_loop(Socket, Message, N - 1, Interval);
     {error, Error} ->
       lager:error("Error ~p sending remaining ~b packets from ~p", [Error, N, Socket]),
-      oneup_metrics:increment(?SOCKETS_SEND_STARTED, -1),
+      oneup_metrics:increment(?SOCKETS_SEND_ACTIVE, -1),
       oneup_metrics:increment(?SOCKETS_SEND_FAILED),
       oneup_metrics:increment(?SEND_PACKETS_FAILURE, N)
   end.
@@ -120,7 +120,7 @@ recv_loop(Socket, Handler, MetricsMap) when is_atom(Handler); is_pid(Handler)->
     if is_pid(Handler) -> fun(Packet) -> Handler ! Packet end;
       true -> fun(Packet) -> Handler:on_packet_received(Socket, Packet, MetricsMap) end
     end,
-  oneup_metrics:increment(?SOCKETS_RECV_STARTED),
+  oneup_metrics:increment(?SOCKETS_RECV_ACTIVE),
   case inner_recv_loop(Socket, HandlerFun, 0) of
     {error, timeout} -> oneup_metrics:increment(?SOCKETS_RECV_TIMEOUT);
     {error, closed} -> oneup_metrics:increment(?SOCKETS_RECV_CLOSED);
@@ -132,7 +132,7 @@ recv_loop(Socket, Handler, MetricsMap) when is_atom(Handler); is_pid(Handler)->
       PrevRate = oneup_metrics:get(?RECV_PACKETS_RATE),
       oneup_metrics:set(?RECV_PACKETS_RATE, round(((PrevRate * (SocketsComplete - 1) + PPS)/SocketsComplete) ) )
   end,
-  oneup_metrics:increment(?SOCKETS_RECV_STARTED, -1).
+  oneup_metrics:increment(?SOCKETS_RECV_ACTIVE, -1).
 
 
 inner_recv_loop(Socket, HandlerFun, NumPackets)->

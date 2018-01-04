@@ -56,7 +56,7 @@ init([client]) ->
     TcpPerfClientSpec =
         #{id => tcp_perf_client,
             start => {tcp_perf_client, start_link, [SendPort, ConnInterval, NumSockets, PacketRate, NumPackets, Packet]},
-            restart => transient,
+            restart => temporary,
             shutdown => 1000},
 
     {ok, {RestartStrategy, [TcpPerfClientSpec]} }.
@@ -74,7 +74,6 @@ create_packet(PacketSize)->
     PacketSize = size(Packet), %% sanity check
     lager:info("Created test packet ~p", [Packet]),
     <<PacketSize:16,Packet/binary>>.
-
 
 listen_socket(Port)->
     case gen_tcp:listen(Port, [binary, {packet, 0}, {active, false} ]) of

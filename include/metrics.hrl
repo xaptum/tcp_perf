@@ -8,14 +8,14 @@
 %%%-------------------------------------------------------------------
 -author("iguberman").
 
--define(SOCKETS_SEND_STARTED, [send_sockets, started]).
+-define(SOCKETS_SEND_ACTIVE, [send_sockets, active]).
 -define(SOCKETS_SEND_COMPLETE, [send_sockets, complete]).
 -define(SOCKETS_SEND_FAILED, [send_sockets, failed]).
 
 -define(SEND_PACKETS_SUCCESS, [send_packets, success]).
 -define(SEND_PACKETS_FAILURE, [send_packets, failure]).
 
--define(SOCKETS_RECV_STARTED, [recv_sockets, started]).
+-define(SOCKETS_RECV_ACTIVE, [recv_sockets, started]).
 -define(SOCKETS_RECV_COMPLETE, [recv_sockets, complete]).
 -define(SOCKETS_RECV_TIMEOUT, [recv_sockets, timeout]).
 -define(SOCKETS_RECV_CLOSED, [recv_sockets, closed]).
@@ -26,10 +26,10 @@
 
 
 -define(METRICS_CONFIG, [
-  ?SOCKETS_SEND_STARTED,
+  ?SOCKETS_SEND_ACTIVE,
   ?SOCKETS_SEND_COMPLETE,
   ?SOCKETS_SEND_FAILED,
-  ?SOCKETS_RECV_STARTED,
+  ?SOCKETS_RECV_ACTIVE,
   ?SOCKETS_RECV_COMPLETE,
   ?SOCKETS_RECV_TIMEOUT,
   ?SOCKETS_RECV_CLOSED,
