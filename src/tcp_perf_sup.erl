@@ -67,6 +67,7 @@ init([client]) ->
 %%====================================================================
 
 start_client(SendHost)->
+    lager:info("Starting client for ~p", [SendHost]),
     supervisor:start_child(?MODULE, [SendHost]).
 
 create_packet(PacketSize)->

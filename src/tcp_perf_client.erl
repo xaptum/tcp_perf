@@ -35,8 +35,11 @@
 %%% API
 %%%===================================================================
 
-start_link(Port, ConnInterval, NumSockets, PacketInterval, NumsPackets, Packet, Host) ->
-  gen_server:start_link({local, ?SERVER}, ?MODULE, [Host,  Port, ConnInterval, NumSockets, PacketInterval, NumsPackets, Packet], []).
+start_link(Port, ConnInterval, NumSockets, PacketInterval, NumsPackets, Packet, Host) when is_atom(Host) ->
+  gen_server:start_link({local, Host}, ?MODULE,
+    [atom_to_list(Host), Port,
+      ConnInterval, NumSockets,
+      PacketInterval, NumsPackets, Packet], []).
 
 %%%===================================================================
 %%% gen_server callbacks

@@ -31,7 +31,7 @@ start(_StartType, _StartArgs) ->
 start_clients(server)->ok;
 start_clients(client)->
   {ok, SendHosts} = application:get_env(send_hosts),
-  [tcp_perf_sup:start_client(atom_to_list(Host)) || Host <- SendHosts],
+  [tcp_perf_sup:start_client(Host) || Host <- SendHosts],
   ok.
 
 %%--------------------------------------------------------------------
